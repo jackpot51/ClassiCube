@@ -9,7 +9,7 @@
 #include <SDL2/SDL.h>
 static SDL_Window* win_handle;
 
-#error "Some features are missing from the SDL backend. If possible, it is recommended that you use a native windowing backend instead"
+//#error "Some features are missing from the SDL backend. If possible, it is recommended that you use a native windowing backend instead"
 
 static void RefreshWindowBounds(void) {
 	SDL_GetWindowSize(win_handle, &WindowInfo.Width, &WindowInfo.Height);
@@ -41,7 +41,7 @@ static void DoCreateWindow(int width, int height, int flags) {
 	int x = Display_CentreX(width);
 	int y = Display_CentreY(height);
 
-	win_handle = SDL_CreateWindow(NULL, x, y, width, height, 
+	win_handle = SDL_CreateWindow(NULL, x, y, width, height,
 					flags | SDL_WINDOW_RESIZABLE);
 	if (!win_handle) Window_SDLFail("creating window");
 

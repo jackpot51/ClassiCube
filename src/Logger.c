@@ -16,7 +16,7 @@
 #define NOIME
 #include <windows.h>
 #include <imagehlp.h>
-#elif defined CC_BUILD_OPENBSD || defined CC_BUILD_HAIKU || defined CC_BUILD_SERENITY
+#elif defined CC_BUILD_OPENBSD || defined CC_BUILD_HAIKU || defined CC_BUILD_SERENITY || defined CC_BUILD_REDOX
 #include <signal.h>
 /* These operating systems don't provide sys/ucontext.h */
 /*  But register constants be found from includes in <signal.h> */
@@ -180,7 +180,7 @@ static void PrintFrame(cc_string* str, cc_uintptr addr, cc_uintptr symAddr, cons
 	module = String_FromReadonly(modName);
 	Utils_UNSAFE_GetFilename(&module);
 	String_Format2(str, "%x - %s", &addr, &module);
-	
+
 	if (symName && symName[0]) {
 		offset = (int)(addr - symAddr);
 		String_Format2(str, "(%c+%i)" _NL, symName, &offset);
@@ -349,6 +349,10 @@ void Logger_Backtrace(cc_string* trace, void* ctx) {
 void Logger_Backtrace(cc_string* trace, void* ctx) {
 	String_AppendConst(trace, "-- backtrace unimplemented --");
 	/* TODO: Backtrace using LibSymbolication */
+}
+#elif defined CC_BUILD_REDOX
+void Logger_Backtrace(cc_string* trace, void* ctx) {
+	String_AppendConst(trace, "-- backtrace unimplemented --");
 }
 #elif defined CC_BUILD_POSIX
 #include <execinfo.h>
@@ -780,6 +784,8 @@ static void PrintRegisters(cc_string* str, void* ctx) {
 	#error "Unknown CPU architecture"
 #endif
 }
+#elif defined CC_BUILD_REDOX
+static void PrintRegisters(cc_string* str, void* ctx) { }
 #endif
 
 static void DumpRegisters(void* ctx) {
@@ -861,7 +867,7 @@ static int SkipRange(const cc_string* str) {
 		|| String_ContainsConst(&path, "/vendor/lib");
 }
 #else
-static int SkipRange(const cc_string* str) { 
+static int SkipRange(const cc_string* str) {
 	return
 		/* Ignore GPU iris driver i915 GEM buffers (~60,000 entries for one user) */
 		String_ContainsConst(str, "anon_inode:i915.gem");
@@ -895,7 +901,7 @@ static void DumpMisc(void* ctx) {
 	cc_uint32 i, count;
 	const char* path;
 	cc_string str;
-	
+
 	/* TODO: Add Logger_LogRaw / Logger_LogConst too */
 	Logger_Log(&modules);
 	count = _dyld_image_count();
@@ -967,7 +973,7 @@ void Logger_Hook(void) {
 
 	SetUnhandledExceptionFilter(UnhandledFilter);
 	DynamicLib_LoadAll(&imagehlp, funcs, Array_Elems(funcs), &lib);
-	
+
 }
 
 #if __GNUC__
@@ -1002,6 +1008,41 @@ void Logger_Abort2(cc_result result, const char* raw_msg) {
 	RtlCaptureContext(&ctx);
 #endif
 	AbortCommon(result, raw_msg, &ctx);
+}
+#elif defined CC_BUILD_REDOX
+static void SignalHandler(int sig) {
+	cc_string msg; char msgBuffer[128 + 1];
+
+	/* Uninstall handler to avoid chance of infinite loop */
+	signal(SIGSEGV, SIG_DFL);
+	signal(SIGBUS,  SIG_DFL);
+	signal(SIGILL,  SIG_DFL);
+	signal(SIGABRT, SIG_DFL);
+	signal(SIGFPE,  SIG_DFL);
+
+	String_InitArray_NT(msg, msgBuffer);
+	String_Format1(&msg, "Unhandled signal %i", &sig);
+	msg.buffer[msg.length] = '\0';
+
+	void *ctx = NULL;
+	AbortCommon(0, msg.buffer, ctx);
+}
+
+void Logger_Hook(void) {
+	struct sigaction sa, old;
+	sa.sa_handler = SignalHandler;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = SA_RESTART | SA_SIGINFO;
+
+	sigaction(SIGSEGV, &sa, &old);
+	sigaction(SIGBUS,  &sa, &old);
+	sigaction(SIGILL,  &sa, &old);
+	sigaction(SIGABRT, &sa, &old);
+	sigaction(SIGFPE,  &sa, &old);
+}
+
+void Logger_Abort2(cc_result result, const char* raw_msg) {
+	AbortCommon(result, raw_msg, NULL);
 }
 #elif defined CC_BUILD_POSIX
 static void SignalHandler(int sig, siginfo_t* info, void* ctx) {
@@ -1089,7 +1130,7 @@ static void LogCrashHeader(void) {
 	Logger_Log(&msg);
 }
 
-static void CloseLogFile(void) { 
+static void CloseLogFile(void) {
 	if (logStream.Meta.File) logStream.Close(&logStream);
 }
 #endif

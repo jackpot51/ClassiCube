@@ -110,7 +110,7 @@ TimeMS DateTime_CurrentUTC_MS(void) {
 }
 
 void DateTime_CurrentLocal(struct DateTime* t) {
-	struct timeval cur; 
+	struct timeval cur;
 	struct tm loc_time;
 	gettimeofday(&cur, NULL);
 	localtime_r(&cur.tv_sec, &loc_time);
@@ -289,7 +289,7 @@ static void* ExecThread(void* param) {
 }
 #else
 static void* ExecThread(void* param) {
-	((Thread_StartFunc)param)(); 
+	((Thread_StartFunc)param)();
 	return NULL;
 }
 #endif
@@ -350,7 +350,7 @@ struct WaitData {
 void* Waitable_Create(void) {
 	struct WaitData* ptr = (struct WaitData*)Mem_Alloc(1, sizeof(struct WaitData), "waitable");
 	int res;
-	
+
 	res = pthread_cond_init(&ptr->cond, NULL);
 	if (res) Logger_Abort2(res, "Creating waitable");
 	res = pthread_mutex_init(&ptr->mutex, NULL);
@@ -363,7 +363,7 @@ void* Waitable_Create(void) {
 void Waitable_Free(void* handle) {
 	struct WaitData* ptr = (struct WaitData*)handle;
 	int res;
-	
+
 	res = pthread_cond_destroy(&ptr->cond);
 	if (res) Logger_Abort2(res, "Destroying waitable");
 	res = pthread_mutex_destroy(&ptr->mutex);
@@ -430,7 +430,7 @@ static void FontDirCallback(const cc_string* path, void* obj) {
 	SysFonts_Register(path);
 }
 
-void Platform_LoadSysFonts(void) { 
+void Platform_LoadSysFonts(void) {
 	int i;
 #if defined CC_BUILD_ANDROID
 	static const cc_string dirs[] = {
@@ -605,7 +605,7 @@ cc_result Socket_Poll(cc_socket s, int mode, cc_bool* success) {
 	pfd.fd     = s;
 	pfd.events = mode == SOCKET_POLL_READ ? POLLIN : POLLOUT;
 	if (poll(&pfd, 1, 0) == -1) { *success = false; return errno; }
-	
+
 	/* to match select, closed socket still counts as readable */
 	flags    = mode == SOCKET_POLL_READ ? (POLLIN | POLLHUP) : POLLOUT;
 	*success = (pfd.revents & flags) != 0;
@@ -671,7 +671,7 @@ cc_result Process_StartOpen(const cc_string* args) {
 	UInt8 str[NATIVE_STR_LEN];
 	CFURLRef urlCF;
 	int len;
-	
+
 	len   = Platform_EncodeUtf8(str, args);
 	urlCF = CFURLCreateWithBytes(kCFAllocatorDefault, str, len, kCFStringEncodingUTF8, NULL);
 	LSOpenCFURLRef(urlCF, NULL);
@@ -716,6 +716,14 @@ static cc_result Process_RawGetExePath(char* path, int* len) {
 static cc_result Process_RawGetExePath(char* path, int* len) {
 	*len = readlink("/proc/self/exe", path, NATIVE_STR_LEN);
 	return *len == -1 ? errno : 0;
+}
+#elif defined CC_BUILD_REDOX
+static cc_result Process_RawGetExePath(char* path, int* len) {
+	int fd = open("sys:exe", O_RDONLY);
+	*len = read(fd, path, NATIVE_STR_LEN);
+	cc_result res = *len == -1 ? errno : 0;
+	close(fd);
+	return res;
 }
 #elif defined CC_BUILD_FREEBSD
 static cc_result Process_RawGetExePath(char* path, int* len) {
@@ -800,7 +808,7 @@ cc_bool Updater_Clean(void) { return true; }
 	#endif
 #elif defined CC_BUILD_LINUX
 	#if __x86_64__
-	const struct UpdaterInfo Updater_Info = {	
+	const struct UpdaterInfo Updater_Info = {
 		"&eModernGL is recommended for newer machines (2010 or later)", 2,
 		{
 			{ "ModernGL", "cc-nix64-gl2" },
@@ -851,7 +859,7 @@ cc_result Updater_Start(const char** action) {
 	*action = "Getting executable path";
 	if ((res = Process_RawGetExePath(path, &len))) return res;
 	path[len] = '\0';
-	
+
 	/* Because the process is only referenced by inode, we can */
 	/* just unlink current filename and rename updated file to it */
 	*action = "Deleting executable";
@@ -904,7 +912,7 @@ const cc_string DynamicLib_Ext = String_FromConst(".dylib");
 void* DynamicLib_Load2(const cc_string* path) {
 	char str[NATIVE_STR_LEN];
 	Platform_EncodeUtf8(str, path);
-	return NSAddImage(str, NSADDIMAGE_OPTION_WITH_SEARCHING | 
+	return NSAddImage(str, NSADDIMAGE_OPTION_WITH_SEARCHING |
 							NSADDIMAGE_OPTION_RETURN_ON_ERROR);
 }
 
@@ -1074,7 +1082,7 @@ static void DecipherBlock(cc_uint32* v, const cc_uint32* key) {
 }
 
 #define ENC1 0xCC005EC0
-#define ENC2 0x0DA4A0DE 
+#define ENC2 0x0DA4A0DE
 #define ENC3 0xC0DED000
 #define MACHINEID_LEN 32
 #define ENC_SIZE 8 /* 2 32 bit ints per block */
@@ -1128,7 +1136,7 @@ static cc_result GetMachineID(cc_uint32* key) {
 #ifdef kIOPlatformUUIDKey
 	uuid = IORegistryEntryCreateCFProperty(registry, CFSTR(kIOPlatformUUIDKey), kCFAllocatorDefault, 0);
 	if (uuid && CFStringGetCString(uuid, tmp, sizeof(tmp), kCFStringEncodingUTF8)) {
-		DecodeMachineID(tmp, String_Length(tmp), key);	
+		DecodeMachineID(tmp, String_Length(tmp), key);
 	}
 #endif
 	if (uuid) CFRelease(uuid);
@@ -1193,10 +1201,10 @@ extern void GetDeviceUUID(cc_string* str);
 static cc_result GetMachineID(cc_uint32* key) {
     cc_string str; char strBuffer[STRING_SIZE];
     String_InitArray(str, strBuffer);
-    
+
     GetDeviceUUID(&str);
     if (!str.length) return ERR_NOT_SUPPORTED;
-    
+
     DecodeMachineID(strBuffer, str.length, key);
     return 0;
 }
@@ -1264,7 +1272,7 @@ cc_result Platform_Decrypt(const void* data, int len, cc_string* dst) {
 int Platform_GetCommandLineArgs(int argc, STRING_REF char** argv, cc_string* args) {
 	int i, count;
 	argc--; argv++; /* skip executable path argument */
-	
+
 
 	#if defined CC_BUILD_MACOS
 	/* Sometimes a "-psn_0_[number]" argument is added before actual args */
@@ -1300,11 +1308,11 @@ static cc_bool IsProblematicWorkingDirectory(void) {
 
 	getcwd(path, 2048);
 	curDir = String_FromReadonly(path);
-	
+
 	home = getenv("HOME");
 	if (!home) return false;
 	homeDir = String_FromReadonly(home);
-	
+
 	if (String_Equals(&curDir, &homeDir)) {
 		Platform_LogConst("Working directory is $HOME! Changing to executable directory..");
 		return true;
@@ -1318,7 +1326,7 @@ cc_result Platform_SetDefaultCurrentDirectory(int argc, char **argv) {
 	int i, len = 0;
 	cc_result res;
 	if (!IsProblematicWorkingDirectory()) return 0;
-	
+
 	res = Process_RawGetExePath(path, &len);
 	if (res) return res;
 

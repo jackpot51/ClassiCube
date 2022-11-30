@@ -12,7 +12,7 @@ ifndef $(PLAT)
 	else
 		PLAT=$(shell uname -s | tr '[:upper:]' '[:lower:]')
 	endif
-	
+
 	ifeq ($(PLAT),darwin)
 		ifeq ($(shell uname -m), x86_64)
 			PLAT=mac_x64
@@ -94,6 +94,12 @@ ifeq ($(PLAT),serenityos)
 LIBS=-lgl -lSDL2
 endif
 
+ifeq ($(PLAT),redox)
+CFLAGS=-I $(COOKBOOK_SYSROOT)/include
+LDFLAGS=-L $(COOKBOOK_SYSROOT)/lib
+LIBS=-lSDL2 -lorbital $(shell $(PKG_CONFIG) --libs osmesa) -lstdc++
+endif
+
 ifeq ($(OS),Windows_NT)
 DEL=del
 endif
@@ -124,6 +130,8 @@ haiku:
 	$(MAKE) $(ENAME) PLAT=haiku
 serenityos:
 	$(MAKE) $(ENAME) PLAT=serenityos
+redox:
+	$(MAKE) $(ENAME) PLAT=redox
 
 clean:
 	$(DEL) $(OBJECTS)
@@ -133,9 +141,9 @@ $(ENAME): $(OBJECTS)
 
 $(C_OBJECTS): %.o : %.c
 	$(CC) $(CFLAGS) -c $< -o $@
-	
+
 interop_cocoa.o: interop_cocoa.m
 	$(CC) $(CFLAGS) -c $< -o $@
-	
+
 Window_Haiku.o: Window_Haiku.cpp
 	$(CC) $(CFLAGS) -c $< -o $@

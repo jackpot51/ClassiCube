@@ -89,11 +89,11 @@ static ALenum (APIENTRY *_alGetError)(void);
 static void   (APIENTRY *_alGenSources)(ALsizei n, ALuint* sources);
 static void   (APIENTRY *_alDeleteSources)(ALsizei n, const ALuint* sources);
 static void   (APIENTRY *_alGetSourcei)(ALuint source, ALenum param, ALint* value);
-static void   (APIENTRY *_alSourcePlay)(ALuint source); 
+static void   (APIENTRY *_alSourcePlay)(ALuint source);
 static void   (APIENTRY *_alSourceStop)(ALuint source);
 static void   (APIENTRY *_alSourceQueueBuffers)(ALuint source, ALsizei nb, const ALuint* buffers);
 static void   (APIENTRY *_alSourceUnqueueBuffers)(ALuint source, ALsizei nb, ALuint* buffers);
-static void   (APIENTRY *_alGenBuffers)(ALsizei n, ALuint* buffers); 
+static void   (APIENTRY *_alGenBuffers)(ALsizei n, ALuint* buffers);
 static void   (APIENTRY *_alDeleteBuffers)(ALsizei n, const ALuint* buffers);
 static void   (APIENTRY *_alBufferData)(ALuint buffer, ALenum format, const void* data, ALsizei size, ALsizei freq);
 
@@ -146,7 +146,7 @@ static cc_bool LoadALFuncs(void) {
 		DynamicLib_Sym(alBufferData),      DynamicLib_Sym(alDistanceModel)
 	};
 	void* lib;
-	
+
 	return DynamicLib_LoadAll(&alLib, funcs, Array_Elems(funcs), &lib);
 }
 
@@ -251,7 +251,7 @@ cc_result Audio_SetFormat(struct AudioContext* ctx, int channels, int sampleRate
 cc_result Audio_QueueData(struct AudioContext* ctx, void* data, cc_uint32 size) {
 	ALuint buffer;
 	ALenum err;
-	
+
 	if (!ctx->free) return ERR_INVALID_ARGUMENT;
 	buffer = ctx->freeIDs[--ctx->free];
 
@@ -295,7 +295,7 @@ cc_bool Audio_FastPlay(struct AudioContext* ctx, struct AudioData* data) {
 cc_result Audio_PlayData(struct AudioContext* ctx, struct AudioData* data) {
 	cc_bool ok = AudioBase_AdjustSound(ctx, data);
 	cc_result res;
-	if (!ok) return ERR_OUT_OF_MEMORY;	
+	if (!ok) return ERR_OUT_OF_MEMORY;
 	data->sampleRate = Audio_AdjustSampleRate(data);
 
 	if ((res = Audio_SetFormat(ctx, data->channels, data->sampleRate))) return res;
@@ -428,7 +428,7 @@ cc_result Audio_SetFormat(struct AudioContext* ctx, int channels, int sampleRate
 	if (ctx->channels == channels && ctx->sampleRate == sampleRate) return 0;
 	ctx->channels   = channels;
 	ctx->sampleRate = sampleRate;
-	
+
 	sampleSize = channels * 2; /* 16 bits per sample / 8 */
 	if ((res = Audio_Reset(ctx))) return res;
 
@@ -439,7 +439,7 @@ cc_result Audio_SetFormat(struct AudioContext* ctx, int channels, int sampleRate
 	fmt.nBlockAlign     = sampleSize;
 	fmt.wBitsPerSample  = 16;
 	fmt.cbSize          = 0;
-	
+
 	res = waveOutOpen(&ctx->handle, WAVE_MAPPER, &fmt, 0, 0, CALLBACK_NULL);
 	/* Show a better error message when no audio output devices connected than */
 	/*  "A device ID has been used that is out of range for your system" */
@@ -461,7 +461,7 @@ cc_result Audio_QueueData(struct AudioContext* ctx, void* data, cc_uint32 dataSi
 		hdr->lpData         = (LPSTR)data;
 		hdr->dwBufferLength = dataSize;
 		hdr->dwLoops        = 1;
-		
+
 		if ((res = waveOutPrepareHeader(ctx->handle, hdr, sizeof(WAVEHDR)))) return res;
 		if ((res = waveOutWrite(ctx->handle, hdr, sizeof(WAVEHDR))))         return res;
 		return 0;
@@ -480,7 +480,7 @@ cc_result Audio_Poll(struct AudioContext* ctx, int* inUse) {
 	for (i = 0; i < ctx->count; i++) {
 		hdr = &ctx->headers[i];
 		if (!(hdr->dwFlags & WHDR_DONE)) { count++; continue; }
-	
+
 		if (!(hdr->dwFlags & WHDR_PREPARED)) continue;
 		/* unprepare this WAVEHDR so it can be reused */
 		res = waveOutUnprepareHeader(ctx->handle, hdr, sizeof(WAVEHDR));
@@ -500,7 +500,7 @@ cc_bool Audio_FastPlay(struct AudioContext* ctx, struct AudioData* data) {
 cc_result Audio_PlayData(struct AudioContext* ctx, struct AudioData* data) {
 	cc_bool ok = AudioBase_AdjustSound(ctx, data);
 	cc_result res;
-	if (!ok) return ERR_OUT_OF_MEMORY; 
+	if (!ok) return ERR_OUT_OF_MEMORY;
 	data->sampleRate = Audio_AdjustSampleRate(data);
 
 	if ((res = Audio_SetFormat(ctx, data->channels, data->sampleRate))) return res;
@@ -552,7 +552,7 @@ static cc_bool LoadSLFuncs(void) {
 		DynamicLib_Sym(SL_IID_BUFFERQUEUE), DynamicLib_Sym(SL_IID_PLAYBACKRATE)
 	};
 	void* lib;
-	
+
 	return DynamicLib_LoadAll(&slLib, funcs, Array_Elems(funcs), &lib);
 }
 
@@ -564,11 +564,11 @@ static cc_bool AudioBackend_Init(void) {
 
 	if (slEngineObject) return true;
 	if (!LoadSLFuncs()) { Logger_WarnFunc(&msg); return false; }
-	
+
 	/* mixer doesn't use any effects */
-	ids[0] = *_SL_IID_NULL; 
+	ids[0] = *_SL_IID_NULL;
 	req[0] = SL_BOOLEAN_FALSE;
-	
+
 	res = _slCreateEngine(&slEngineObject, 0, NULL, 0, NULL, NULL);
 	if (res) { AudioWarn(res, "creating OpenSL ES engine"); return false; }
 
@@ -693,7 +693,7 @@ cc_result Audio_Poll(struct AudioContext* ctx, int* inUse) {
 	cc_result res = 0;
 
 	if (ctx->playerQueue) {
-		res = (*ctx->playerQueue)->GetState(ctx->playerQueue, &state);	
+		res = (*ctx->playerQueue)->GetState(ctx->playerQueue, &state);
 	}
 	*inUse  = state.count;
 	return res;
@@ -706,7 +706,7 @@ cc_bool Audio_FastPlay(struct AudioContext* ctx, struct AudioData* data) {
 cc_result Audio_PlayData(struct AudioContext* ctx, struct AudioData* data) {
 	cc_bool ok = AudioBase_AdjustSound(ctx, data);
 	cc_result res;
-	if (!ok) return ERR_OUT_OF_MEMORY; 
+	if (!ok) return ERR_OUT_OF_MEMORY;
 
 	if ((res = Audio_SetFormat(ctx, data->channels, data->sampleRate))) return res;
 	/* rate is in milli, so 1000 = normal rate */
@@ -789,7 +789,7 @@ cc_bool Audio_FastPlay(struct AudioContext* ctx, struct AudioData* data) {
 }
 
 cc_result Audio_PlayData(struct AudioContext* ctx, struct AudioData* data) {
-	if (!ctx->contextID) 
+	if (!ctx->contextID)
 		ctx->contextID = interop_AudioCreate();
 	return interop_AudioPlay(ctx->contextID, data->data, data->volume, data->rate);
 }
@@ -800,6 +800,37 @@ cc_bool Audio_DescribeError(cc_result res, cc_string* dst) {
 
 	String_AppendUtf8(dst, buffer, len);
 	return len > 0;
+}
+#else
+struct AudioContext { int todo; };
+
+static cc_bool AudioBackend_Init(void) { return false; }
+
+void Audio_Init(struct AudioContext* ctx, int buffers) { }
+void Audio_Close(struct AudioContext* ctx) { }
+
+cc_result Audio_SetFormat(struct AudioContext* ctx, int channels, int sampleRate) {
+	return ERR_NOT_SUPPORTED;
+}
+cc_result Audio_QueueData(struct AudioContext* ctx, void* data, cc_uint32 size) {
+	return ERR_NOT_SUPPORTED;
+}
+cc_result Audio_Play(struct AudioContext* ctx) { return ERR_NOT_SUPPORTED; }
+
+cc_result Audio_Poll(struct AudioContext* ctx, int* inUse) {
+	return 0;
+}
+
+cc_bool Audio_FastPlay(struct AudioContext* ctx, struct AudioData* data) {
+	return true;
+}
+
+cc_result Audio_PlayData(struct AudioContext* ctx, struct AudioData* data) {
+	return 0;
+}
+
+cc_bool Audio_DescribeError(cc_result res, cc_string* dst) {
+	return false;
 }
 #endif
 
@@ -1119,10 +1150,10 @@ static void InitWebSounds(void) {
 static cc_bool sounds_loaded;
 static void Sounds_Start(void) {
 	int i;
-	if (!AudioBackend_Init()) { 
-		AudioBackend_Free(); 
-		Audio_SoundsVolume = 0; 
-		return; 
+	if (!AudioBackend_Init()) {
+		AudioBackend_Free();
+		Audio_SoundsVolume = 0;
+		return;
 	}
 
 	for (i = 0; i < SOUND_MAX_CONTEXTS; i++) {
@@ -1207,7 +1238,7 @@ static cc_result Music_PlayOgg(struct Stream* source) {
 	Ogg_Init(&ogg, source);
 	vorbis.source = &ogg;
 	if ((res = Vorbis_DecodeHeaders(&vorbis))) goto cleanup;
-	
+
 	channels   = vorbis.channels;
 	sampleRate = vorbis.sampleRate;
 	if ((res = Audio_SetFormat(&music_ctx, channels, sampleRate))) goto cleanup;
@@ -1334,9 +1365,9 @@ static void Music_RunLoop(void) {
 static void Music_Start(void) {
 	if (music_thread) return;
 	if (!AudioBackend_Init()) {
-		AudioBackend_Free(); 
+		AudioBackend_Free();
 		Audio_MusicVolume = 0;
-		return; 
+		return;
 	}
 
 	music_joining  = false;
@@ -1350,7 +1381,7 @@ static void Music_Stop(void) {
 	music_joining  = true;
 	music_stopping = true;
 	Waitable_Signal(music_waitable);
-	
+
 	if (music_thread) Thread_Join(music_thread);
 	music_thread = NULL;
 }
