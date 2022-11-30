@@ -160,7 +160,7 @@ void Context2D_Alloc(struct Context2D* ctx, int width, int height) {
 	width  = Math_NextPowOf2(width);
 	height = Math_NextPowOf2(height);
 
-	ctx->bmp.width  = width; 
+	ctx->bmp.width  = width;
 	ctx->bmp.height = height;
 	ctx->bmp.scan0  = (BitmapCol*)Mem_AllocCleared(width * height, 4, "bitmap data");
 }
@@ -326,7 +326,7 @@ cc_bool Drawer2D_UNSAFE_NextPart(cc_string* left, cc_string* part, char* colorCo
 	if (left->length >= 2 && left->buffer[0] == '&') {
 		cur   = left->buffer[1];
 		color = Drawer2D_GetColor(cur);
-		
+
 		if (BitmapCol_A(color)) {
 			*colorCode = cur;
 			left->buffer += 2;
@@ -334,7 +334,7 @@ cc_bool Drawer2D_UNSAFE_NextPart(cc_string* left, cc_string* part, char* colorCo
 		}
 	}
 
-	for (i = 0; i < left->length; i++) 
+	for (i = 0; i < left->length; i++)
 	{
 		if (left->buffer[i] == '&' && Drawer2D_ValidColorCodeAt(left, i + 1)) break;
 	}
@@ -372,7 +372,7 @@ void Drawer2D_WithoutColors(cc_string* str, const cc_string* src) {
 char Drawer2D_LastColor(const cc_string* text, int start) {
 	int i;
 	if (start >= text->length) start = text->length - 1;
-	
+
 	for (i = start; i >= 0; i--) {
 		if (text->buffer[i] != '&') continue;
 		if (Drawer2D_ValidColorCodeAt(text, i + 1)) {
@@ -612,7 +612,7 @@ void Drawer2D_DrawClippedText(struct Context2D* ctx, struct DrawTextArgs* args,
 	String_InitArray(part.text, strBuffer);
 	String_Copy(&part.text, &args->text);
 	String_Append(&part.text, '.');
-	
+
 	for (i = part.text.length - 2; i > 0; i--) {
 		part.text.buffer[i] = '.';
 		/* skip over trailing spaces */
@@ -658,7 +658,7 @@ static void InitHexEncodedColor(int i, int hex, cc_uint8 lo, cc_uint8 hi) {
 }
 
 static void OnReset(void) {
-	int i;	
+	int i;
 	for (i = 0; i < DRAWER2D_MAX_COLORS; i++) {
 		Drawer2D.Colors[i] = 0;
 	}
@@ -682,7 +682,7 @@ static void OnInit(void) {
 	TextureEntry_Register(&default_entry);
 }
 
-static void OnFree(void) { 
+static void OnFree(void) {
 	FreeFontBitmap();
 	fontBitmap.scan0 = NULL;
 }
@@ -816,9 +816,10 @@ static cc_string font_candidates[] = {
 	String_FromConst("Nimbus Sans"),
 	String_FromConst("Bitstream Charter"),
 	String_FromConst("Cantarell"),
-	String_FromConst("DejaVu Sans Book"), 
+	String_FromConst("DejaVu Sans Book"),
 	String_FromConst("Century Schoolbook L Roman"), /* commonly available on linux */
 	String_FromConst("Liberation Serif"), /* for SerenityOS */
+	String_FromConst("Fira Sans"), /* for Redox OS */
 	String_FromConst("Slate For OnePlus"), /* Android 10, some devices */
 	String_FromConst("Roboto"), /* Android (broken on some Android 10 devices) */
 	String_FromConst("Geneva"), /* for ancient macOS versions */
@@ -853,7 +854,7 @@ static void SysFonts_Update(void) {
 static void SysFonts_Load(void) {
 	EntryList_UNSAFE_Load(&font_list, FONT_CACHE_FILE);
 	if (font_list.count) return;
-	
+
 	Window_ShowDialog("One time load", "Initialising font cache, this can take several seconds.");
 	SysFonts_Update();
 }
@@ -1096,7 +1097,7 @@ static int Font_SysTextWidth(struct DrawTextArgs* args) {
 				Platform_Log2("Error %i measuring width of %r", &res, &c);
 				charWidth = 0;
 			} else {
-				charWidth = face->glyph->advance.x;		
+				charWidth = face->glyph->advance.x;
 			}
 
 			font->widths[(cc_uint8)c] = charWidth;
@@ -1170,7 +1171,7 @@ static void Font_SysTextDraw(struct DrawTextArgs* args, struct Bitmap* bmp, int 
 	cc_string text = args->text;
 	int descender, height, begX = x;
 	BitmapCol color;
-	
+
 	/* glyph state */
 	FT_BitmapGlyph glyph;
 	FT_Bitmap* img;
@@ -1248,8 +1249,8 @@ const cc_string* SysFonts_UNSAFE_GetDefault(void) {
 }
 
 void SysFonts_GetNames(struct StringsBuffer* buffer) {
-	static const char* font_names[] = { 
-		"Arial", "Arial Black", "Courier New", "Comic Sans MS", "Georgia", "Garamond", 
+	static const char* font_names[] = {
+		"Arial", "Arial Black", "Courier New", "Comic Sans MS", "Georgia", "Garamond",
 		"Helvetica", "Impact", "Tahoma", "Times New Roman", "Trebuchet MS", "Verdana",
 		"cursive", "fantasy", "monospace", "sans-serif", "serif", "system-ui"
 	};
@@ -1268,7 +1269,7 @@ cc_result SysFont_Make(struct FontDesc* desc, const cc_string* fontName, int siz
 
 	desc->handle = Mem_TryAlloc(fontName->length + 1, 1);
 	if (!desc->handle) return ERR_OUT_OF_MEMORY;
-	
+
 	String_CopyToRaw(desc->handle, fontName->length + 1, fontName);
 	return 0;
 }
@@ -1365,7 +1366,7 @@ void SysFont_MakeDefault(struct FontDesc* desc, int size, int flags) {
 void Font_Free(struct FontDesc* desc) {
     desc->size = 0;
     if (Font_IsBitmap(desc)) return;
-    
+
     interop_SysFontFree(desc->handle);
     desc->handle = NULL;
 }

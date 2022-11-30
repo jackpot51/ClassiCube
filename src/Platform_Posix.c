@@ -463,6 +463,10 @@ void Platform_LoadSysFonts(void) {
 	static const cc_string dirs[] = {
 		String_FromConst("/res/fonts")
 	};
+#elif defined CC_BUILD_REDOX
+	static const cc_string dirs[] = {
+		String_FromConst("/ui/fonts")
+	};
 #else
 	static const cc_string dirs[] = {
 		String_FromConst("/usr/share/fonts"),
